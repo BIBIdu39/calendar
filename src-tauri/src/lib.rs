@@ -1,3 +1,5 @@
+use tauri_plugin_updater::UpdaterExt;
+
 #[tauri::command]
 async fn fetch_calendar(url: String) -> Result<String, String> {
     let mut clean_url = url.trim().trim_matches('"').trim_matches('\'').to_string();
@@ -7,9 +9,8 @@ async fn fetch_calendar(url: String) -> Result<String, String> {
         clean_url = clean_url.replacen("webcals://", "https://", 1);
     }
 
-    // Auto-resolve Lyon 1 portal URLs to direct working export feed
-    if clean_url.contains("edt.univ-lyon1.fr") && (clean_url.contains("portal") || clean_url.contains("encryptedUrl") || !clean_url.contains("anonymous_cal.jsp")) {
-        clean_url = "https://edt.univ-lyon1.fr/jsp/custom/modules/plannings/anonymous_cal.jsp?resources=47168,12102&projectId=1&calType=ical&firstDate=2026-08-18&lastDate=2027-08-01".to_string();
+    if clean_url.is_empty() {
+        return Err("Aucune URL configurée".to_string());
     }
 
     let client = reqwest::Client::builder()
@@ -61,6 +62,21 @@ fn app_close(window: tauri::Window) {
     let _ = window.close();
 }
 
+#[tauri::command]
+async fn check_for_updates(app: tauri::AppHandle) -> Result<bool, String> {
+    let updater = app.updater().map_err(|e| e.to_string())?;
+    match updater.check().await {
+        Ok(Some(update)) => {
+            // Install the update and relaunch
+            update.download_and_install(|_, _| {}, || {}).await.map_err(|e| e.to_string())?;
+            app.restart();
+        }
+        Ok(None) => return Ok(false),
+        Err(e) => return Err(e.to_string()),
+    }
+    Ok(true)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
@@ -72,15 +88,30 @@ pub fn run() {
             .build(),
         )?;
       }
+      // Check for updates silently at startup (release builds only)
+      #[cfg(not(debug_assertions))]
+      {
+        let handle = app.handle().clone();
+        tauri::async_runtime::spawn(async move {
+            if let Ok(updater) = handle.updater() {
+                if let Ok(Some(update)) = updater.check().await {
+                    let _ = update.download_and_install(|_, _| {}, || {}).await;
+                    handle.restart();
+                }
+            }
+        });
+      }
       Ok(())
     })
+    .plugin(tauri_plugin_updater::Builder::new().build())
     .plugin(tauri_plugin_http::init())
     .plugin(tauri_plugin_store::Builder::default().build())
     .invoke_handler(tauri::generate_handler![
         fetch_calendar,
         app_minimize,
         app_toggle_maximize,
-        app_close
+        app_close,
+        check_for_updates
     ])
     .run(tauri::generate_context!())
     .expect("error while building tauri application");

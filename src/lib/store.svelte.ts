@@ -3,12 +3,12 @@ import { parseICS } from './parser';
 import { isTauri, invoke } from '@tauri-apps/api/core';
 import { DEFAULT_RAW_ICS } from './default-data';
 
-export const WORKING_LYON1_URL =
-  'https://edt.univ-lyon1.fr/jsp/custom/modules/plannings/anonymous_cal.jsp?resources=47168,12102&projectId=1&calType=ical&firstDate=2026-08-18&lastDate=2027-08-01';
+// No hardcoded URL — each user configures their own ADE calendar link
+export const WORKING_LYON1_URL = '';
 
 export function normalizeCalendarUrl(input?: string): string {
   let url = (input || '').trim().replace(/^["']|["']$/g, '').trim();
-  if (!url) return WORKING_LYON1_URL;
+  if (!url) return '';
 
   if (/^webcal:\/\//i.test(url)) {
     url = url.replace(/^webcal:\/\//i, 'https://');
@@ -16,19 +16,11 @@ export function normalizeCalendarUrl(input?: string): string {
     url = url.replace(/^webcals:\/\//i, 'https://');
   }
 
-  // If the user pastes any Lyon 1 portal link or encryptedUrl, seamlessly convert to the working direct anonymous_cal export feed
-  if (
-    url.includes('edt.univ-lyon1.fr') &&
-    (url.includes('portal') || url.includes('encryptedUrl') || !url.includes('anonymous_cal.jsp'))
-  ) {
-    return WORKING_LYON1_URL;
-  }
-
   return url;
 }
 
 const defaultPreferences: Preferences = {
-  url: WORKING_LYON1_URL,
+  url: '',
   theme: 'dark',
   density: 'comfortable',
   startHour: 8,
@@ -401,7 +393,7 @@ export function createCalendarStore() {
   }
 
   async function syncEvents() {
-    const rawUrl = preferences.url || WORKING_LYON1_URL;
+    const rawUrl = preferences.url || '';
     loading = true;
     error = null;
 
