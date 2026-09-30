@@ -3,12 +3,12 @@ import { parseICS } from './parser';
 import { isTauri, invoke } from '@tauri-apps/api/core';
 import { DEFAULT_RAW_ICS } from './default-data';
 
-// No hardcoded URL — each user configures their own ADE calendar link
-export const WORKING_LYON1_URL = '';
+export const WORKING_LYON1_URL =
+  'https://edt.univ-lyon1.fr/jsp/custom/modules/plannings/anonymous_cal.jsp?resources=47168,12102&projectId=1&calType=ical&firstDate=2026-08-18&lastDate=2027-08-01';
 
 export function normalizeCalendarUrl(input?: string): string {
   let url = (input || '').trim().replace(/^["']|["']$/g, '').trim();
-  if (!url) return '';
+  if (!url) return WORKING_LYON1_URL;
 
   if (/^webcal:\/\//i.test(url)) {
     url = url.replace(/^webcal:\/\//i, 'https://');
@@ -16,11 +16,19 @@ export function normalizeCalendarUrl(input?: string): string {
     url = url.replace(/^webcals:\/\//i, 'https://');
   }
 
+  // If user pasted a portal/interactive link, automatically map to working direct export
+  if (
+    url.includes('edt.univ-lyon1.fr') &&
+    (url.includes('portal') || url.includes('encryptedUrl') || !url.includes('anonymous_cal.jsp'))
+  ) {
+    return WORKING_LYON1_URL;
+  }
+
   return url;
 }
 
 const defaultPreferences: Preferences = {
-  url: '',
+  url: WORKING_LYON1_URL,
   theme: 'dark',
   density: 'comfortable',
   startHour: 8,
@@ -208,7 +216,7 @@ function getInitialPreferences(): Preferences {
         return {
           ...defaultPreferences,
           ...parsed,
-          url: normalizeCalendarUrl(parsed.url)
+          url: normalizeCalendarUrl(parsed.url || WORKING_LYON1_URL)
         };
       }
     }
@@ -394,11 +402,16 @@ export function createCalendarStore() {
 
   async function syncEvents() {
     const rawUrl = preferences.url || '';
+    const cleanUrl = normalizeCalendarUrl(rawUrl);
+    if (!cleanUrl) {
+      error = "Aucun lien iCal configuré. Allez dans Options (en bas) pour coller votre lien ADE.";
+      loading = false;
+      return;
+    }
     loading = true;
     error = null;
 
     try {
-      const cleanUrl = normalizeCalendarUrl(rawUrl);
       preferences.url = cleanUrl;
 
       const rawICS = await fetchICSData(cleanUrl);
@@ -441,9 +454,7 @@ export function createCalendarStore() {
       }
     } catch (err: any) {
       console.error('Erreur synchronisation :', err);
-      if (events.length === 0) {
-        error = err?.message || 'Échec de synchronisation avec le serveur universitaire';
-      }
+      error = err?.message || 'Échec de synchronisation avec le serveur universitaire';
     } finally {
       loading = false;
     }
@@ -502,6 +513,7 @@ export function createCalendarStore() {
     get preferences() { return preferences; },
     get loading() { return loading; },
     get error() { return error; },
+    set error(val: string | null) { error = val; },
     get searchQuery() { return searchQuery; },
     set searchQuery(val: string) { searchQuery = val; },
     get selectedEvent() { return selectedEvent; },

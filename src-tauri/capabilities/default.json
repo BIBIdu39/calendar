@@ -4,9 +4,13 @@
   "windows": [
     "*"
   ],
+  "webviews": [
+    "*"
+  ],
   "permissions": [
     "core:default",
     "core:window:default",
+    "core:webview:default",
     {
       "identifier": "http:default",
       "allow": [

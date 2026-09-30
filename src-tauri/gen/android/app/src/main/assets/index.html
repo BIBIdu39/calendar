@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="fr" data-theme="dark">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+		<meta name="theme-color" content="#09090b" id="meta-theme-color" />
+		<meta name="mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+		<meta name="apple-mobile-web-app-title" content="Calendar" />
+		<link rel="icon" type="image/png" href="/favicon.png" />
+		<link rel="manifest" href="/manifest.webmanifest" />
+		<link href="./_app/immutable/entry/start.JLmOOKWd.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/Bdd72xfB.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/Cbhcfgax.js" rel="modulepreload">
+		<link href="./_app/immutable/entry/app.CRZ9eNp-.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/uBIymjUX.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/xihTtKlq.js" rel="modulepreload">
+		<link href="./_app/immutable/nodes/0.DsswvI6v.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/D_PrAIjU.js" rel="modulepreload">
+		<link href="./_app/immutable/nodes/2.DRWbjoKC.js" rel="modulepreload">
+		
+		<link href="./_app/immutable/assets/0.CrQAQzR0.css" rel="stylesheet">
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<div style="display: contents">
+			<script>
+				{
+					__sveltekit_1y89c8t = {
+						base: new URL(".", location).pathname.slice(0, -1)
+					};
+
+					const element = document.currentScript.parentElement;
+
+					Promise.all([
+						import("./_app/immutable/entry/start.JLmOOKWd.js"),
+						import("./_app/immutable/entry/app.CRZ9eNp-.js")
+					]).then(([kit, app]) => {
+						kit.start(app, element);
+					});
+
+					if ('serviceWorker' in navigator) {
+						const script_url = './service-worker.js';
+						const policy = globalThis?.window?.trustedTypes?.createPolicy(
+							'sveltekit-trusted-url',
+							{ createScriptURL(url) { return url; } }
+						);
+						const sanitised = policy?.createScriptURL(script_url) ?? script_url;
+						addEventListener('load', function () {
+							navigator.serviceWorker.register(sanitised);
+						});
+					}
+				}
+			</script>
+		</div>
+	</body>
+</html>

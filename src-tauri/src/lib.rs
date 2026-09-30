@@ -1,3 +1,4 @@
+#[cfg(desktop)]
 use tauri_plugin_updater::UpdaterExt;
 
 #[tauri::command]
@@ -44,37 +45,47 @@ async fn fetch_calendar(url: String) -> Result<String, String> {
 }
 
 #[tauri::command]
-fn app_minimize(window: tauri::Window) {
-    let _ = window.minimize();
+fn app_minimize(_window: tauri::Window) {
+    #[cfg(desktop)]
+    let _ = _window.minimize();
 }
 
 #[tauri::command]
-fn app_toggle_maximize(window: tauri::Window) {
-    if window.is_maximized().unwrap_or(false) {
-        let _ = window.unmaximize();
+fn app_toggle_maximize(_window: tauri::Window) {
+    #[cfg(desktop)]
+    if _window.is_maximized().unwrap_or(false) {
+        let _ = _window.unmaximize();
     } else {
-        let _ = window.maximize();
+        let _ = _window.maximize();
     }
 }
 
 #[tauri::command]
-fn app_close(window: tauri::Window) {
-    let _ = window.close();
+fn app_close(_window: tauri::Window) {
+    #[cfg(desktop)]
+    let _ = _window.close();
 }
 
 #[tauri::command]
 async fn check_for_updates(app: tauri::AppHandle) -> Result<bool, String> {
-    let updater = app.updater().map_err(|e| e.to_string())?;
-    match updater.check().await {
-        Ok(Some(update)) => {
-            // Install the update and relaunch
-            update.download_and_install(|_, _| {}, || {}).await.map_err(|e| e.to_string())?;
-            app.restart();
+    #[cfg(desktop)]
+    {
+        let updater = app.updater().map_err(|e| e.to_string())?;
+        match updater.check().await {
+            Ok(Some(update)) => {
+                update.download_and_install(|_, _| {}, || {}).await.map_err(|e| e.to_string())?;
+                app.restart();
+                return Ok(true);
+            }
+            Ok(None) => return Ok(false),
+            Err(e) => return Err(e.to_string()),
         }
-        Ok(None) => return Ok(false),
-        Err(e) => return Err(e.to_string()),
     }
-    Ok(true)
+    #[cfg(not(desktop))]
+    {
+        let _ = app;
+        Ok(false)
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -88,8 +99,8 @@ pub fn run() {
             .build(),
         )?;
       }
-      // Check for updates silently at startup (release builds only)
-      #[cfg(not(debug_assertions))]
+      // Check for updates silently at startup (release builds only on desktop)
+      #[cfg(all(desktop, not(debug_assertions)))]
       {
         let handle = app.handle().clone();
         tauri::async_runtime::spawn(async move {
