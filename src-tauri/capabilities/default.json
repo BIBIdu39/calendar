@@ -1,0 +1,19 @@
+{
+  "identifier": "default",
+  "description": "Default capability",
+  "windows": [
+    "*"
+  ],
+  "permissions": [
+    "core:default",
+    "core:window:default",
+    {
+      "identifier": "http:default",
+      "allow": [
+        { "url": "https://*/**" },
+        { "url": "http://*/**" }
+      ]
+    },
+    "store:default"
+  ]
+}
